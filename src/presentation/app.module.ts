@@ -4,7 +4,6 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { CronModule } from 'src/infrastructure/CronServices/cronService.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-// import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
   imports: [
@@ -14,18 +13,6 @@ import { AppService } from './app.service';
       isGlobal: true,
     }),
     CronModule,
-    // ClientsModule.register([
-    //   {
-    //     name: 'KafkaClient',
-    //     transport: Transport.KAFKA,
-    //     options: {
-    //       client: {
-    //         clientId: 'kafkaSample',
-    //         brokers: ['localhost:9092'],
-    //       },
-    //     },
-    //   },
-    // ]),
   ],
   controllers: [AppController],
   providers: [AppService],

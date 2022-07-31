@@ -1,28 +1,28 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Client, ClientKafka, Transport } from '@nestjs/microservices';
+import { ClientKafka } from '@nestjs/microservices';
 import { Cron } from '@nestjs/schedule';
 import { ETwitterStreamEvent, TwitterApi } from 'twitter-api-v2';
 @Injectable()
-export class TasksService /*implements OnModuleInit */ {
-  constructor(private readonly configService: ConfigService) {}
-  private readonly logger = new Logger(TasksService.name);
+export class TwitterCronJob {
+  constructor(
+    private readonly configService: ConfigService,
+    @Inject('KafkaClient') private kafkaClient: ClientKafka,
+  ) {}
+  private readonly logger = new Logger(TwitterCronJob.name);
 
-  //TODO: refactor
-  @Client({
-    transport: Transport.KAFKA,
-    options: {
-      client: {
-        clientId: 'kafkaSample',
-        brokers: ['localhost:9092'],
-      },
-    },
-  })
-  kafkaClient: ClientKafka;
-  // async onModuleInit() {
-  //   this.kafkaClient.subscribeToResponseOf('twitter-topic');
-  //   await this.kafkaClient.connect();
-  // }
+  // //TODO: refactor
+  // @Client({
+  //   transport: Transport.KAFKA,
+  //   options: {
+  //     client: {
+  //       clientId: 'kafkaSample',
+  //       brokers: ['localhost:9092'],
+  //     },
+  //   },
+  // })
+  // kafkaClient: ClientKafka;
+
   @Cron(new Date(Date.now() + 10 * 1000))
   async handleCron() {
     this.logger.debug('Cron Job HERE!');
