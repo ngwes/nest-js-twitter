@@ -1,0 +1,10 @@
+# Update the content of this file before launching application or, alternatively, use environment variables
+
+twitterBearerToken=
+MessageQueueBroker=localhost:9092
+isDevelopment=true
+transportType=Kafka
+MessageQueueClientId=kafkaSample
+twitterTopic=twitter-topic
+hashtags=Javascript;NodeJS
+hashtagsSeparator=;

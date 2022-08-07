@@ -12,14 +12,15 @@ import {
   providers: [
     TwitterCronJob,
     {
-      provide: 'KafkaClient',
+      provide: 'MessageQueueClient',
       useFactory: (configService: ConfigService) => {
         const options: ClientOptions = {
-          transport: Transport.KAFKA,
+          transport:
+            Transport[configService.get<string>('transportType').toUpperCase()],
           options: {
             client: {
-              clientId: 'kafkaId',
-              brokers: [configService.get<string>('kafkaBroker')],
+              clientId: configService.get<string>('MessageQueueClientId'),
+              brokers: [configService.get<string>('MessageQueueBroker')],
             },
           },
         };

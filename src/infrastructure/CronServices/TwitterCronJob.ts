@@ -2,65 +2,57 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientKafka } from '@nestjs/microservices';
 import { Cron } from '@nestjs/schedule';
-import { ETwitterStreamEvent, TwitterApi } from 'twitter-api-v2';
+
+import { TwitterClientBuilder } from './TwitterClientBuilder';
+import { TweetV2SingleStreamResult } from 'twitter-api-v2';
 @Injectable()
 export class TwitterCronJob {
   constructor(
+    @Inject('MessageQueueClient') private messageQueueClient: ClientKafka,
     private readonly configService: ConfigService,
-    @Inject('KafkaClient') private kafkaClient: ClientKafka,
   ) {}
   private readonly logger = new Logger(TwitterCronJob.name);
-
-  // //TODO: refactor
-  // @Client({
-  //   transport: Transport.KAFKA,
-  //   options: {
-  //     client: {
-  //       clientId: 'kafkaSample',
-  //       brokers: ['localhost:9092'],
-  //     },
-  //   },
-  // })
-  // kafkaClient: ClientKafka;
 
   @Cron(new Date(Date.now() + 10 * 1000))
   async handleCron() {
     this.logger.debug('Cron Job HERE!');
-    this.kafkaClient.subscribeToResponseOf('twitter-topic');
-    await this.kafkaClient.connect();
-    const client = new TwitterApi(
-      this.configService.get<string>('twitterBearerToken'),
+    const twitterTopic = this.configService.get<string>('twitterTopic');
+    this.messageQueueClient.subscribeToResponseOf(twitterTopic);
+    await this.messageQueueClient.connect();
+    const hashtags = this._GetHashtags();
+    const [client, stream] = await new TwitterClientBuilder(this.configService)
+      .AddToken()
+      .CleanRules(hashtags)
+      .CreateStream(async (tweet) => {
+        this._StreamHandler(tweet, twitterTopic);
+      })
+      .Build();
+  }
+
+  private _StreamHandler(
+    tweet: TweetV2SingleStreamResult,
+    twitterTopic: string,
+  ) {
+    if (this._IsARetweet(tweet)) return;
+
+    this.logger.debug(tweet.data?.text);
+    this.messageQueueClient.send(twitterTopic, tweet.data?.text).subscribe();
+  }
+
+  private _GetHashtags(): { tag?: string; value: string }[] {
+    const x = this.configService
+      .get<string>('hashtags')
+      .split(this.configService.get<string>('hashtagsSeparator'));
+    return x.map((v) => {
+      return { value: v };
+    });
+  }
+
+  private _IsARetweet(tweet: TweetV2SingleStreamResult) {
+    return (
+      tweet.data.referenced_tweets?.some(
+        (tweet) => tweet.type === 'retweeted',
+      ) ?? false
     );
-
-    const rules = await client.v2.streamRules();
-    if (rules.data?.length) {
-      await client.v2.updateStreamRules({
-        delete: { ids: rules.data.map((rule) => rule.id) },
-      });
-    }
-    await client.v2.updateStreamRules({
-      add: [{ value: 'JavaScript' }, { value: 'NodeJS' }],
-    });
-
-    const stream = await client.v2.searchStream({
-      'tweet.fields': ['referenced_tweets', 'author_id'],
-      expansions: ['referenced_tweets.id'],
-    });
-    stream.autoReconnect = true;
-    stream.on(ETwitterStreamEvent.Data, async (tweet) => {
-      const isARt =
-        tweet.data.referenced_tweets?.some(
-          (tweet) => tweet.type === 'retweeted',
-        ) ?? false;
-      if (isARt) {
-        return;
-      }
-      this.logger.debug(tweet.data?.text);
-      this.kafkaClient.send('twitter-topic', tweet.data?.text).subscribe({
-        next: () => {
-          this.logger.debug('sent message to kafka');
-        },
-      });
-    });
   }
 }
