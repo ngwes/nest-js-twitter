@@ -22,12 +22,16 @@
   },
   "dependencies": {
     "@nestjs/common": "^9.0.3",
+    "@nestjs/config": "^2.2.0",
     "@nestjs/core": "^9.0.3",
+    "@nestjs/microservices": "^9.0.7",
     "@nestjs/platform-express": "^9.0.0",
     "@nestjs/schedule": "^2.1.0",
+    "kafkajs": "^2.1.0",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
-    "rxjs": "^7.2.0"
+    "rxjs": "^7.2.0",
+    "twitter-api-v2": "^1.12.3"
   },
   "devDependencies": {
     "@nestjs/cli": "^9.0.0",

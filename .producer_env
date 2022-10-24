@@ -1,0 +1,8 @@
+twitterBearerToken=
+MessageQueueBroker=broker:29092
+isDevelopment=true
+transportType=Kafka
+MessageQueueClientId=kafkaSample
+twitterTopic=twitter-topic
+hashtags=Javascript;NodeJS
+hashtagsSeparator=;
